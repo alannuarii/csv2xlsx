@@ -20,13 +20,10 @@ pipeline {
             }
         }
 
-        stage('Prepare Environment & Dependencies') {
+        stage('Build Docker Image') {
             steps {
                 sh '''
-                    python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .
                 '''
             }
         }
@@ -34,22 +31,21 @@ pipeline {
         stage('Automated Tests') {
             steps {
                 sh '''
-                    . .venv/bin/activate
-                    pytest tests/ -v --junitxml=test-results.xml
+                    # Siapkan file untuk hasil tes agar dapat ditulis oleh non-root user (appuser) di dalam container
+                    touch test-results.xml
+                    chmod 666 test-results.xml
+                    
+                    # Jalankan test di dalam container yang baru dibangun, mount direktori tests dan file output
+                    docker run --rm \
+                        -v "${WORKSPACE}/tests:/app/tests" \
+                        -v "${WORKSPACE}/test-results.xml:/app/test-results.xml" \
+                        ${IMAGE_NAME}:${IMAGE_TAG} pytest tests/ -v --junitxml=test-results.xml
                 '''
             }
             post {
                 always {
                     junit testResults: 'test-results.xml', allowEmptyResults: true
                 }
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh '''
-                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .
-                '''
             }
         }
 
