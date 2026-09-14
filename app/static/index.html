@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="id" class="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>csv2xlsx - Modern CSV to Excel Converter</title>
-  <meta name="description" content="Konversi file CSV, TSV, dan TXT menjadi spreadsheet Microsoft Excel (.xlsx) dengan auto-detect delimiter, styling profesional, auto-filter, dan auto-fit column." />
+  <title>CSV to Excel Converter</title>
+  <meta name="description"
+    content="Konversi file CSV, TSV, dan TXT menjadi spreadsheet Microsoft Excel (.xlsx) dengan auto-detect delimiter, styling profesional, auto-filter, dan auto-fit column." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -47,6 +50,7 @@
       background: radial-gradient(circle at 50% 0%, #131d2e 0%, #090d16 100%);
       min-height: 100vh;
     }
+
     .glass-card {
       background: rgba(15, 23, 42, 0.68);
       backdrop-filter: blur(16px);
@@ -54,61 +58,85 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
     }
+
     .glass-card-subtle {
       background: rgba(30, 41, 59, 0.45);
       border: 1px solid rgba(255, 255, 255, 0.06);
     }
+
     .custom-scrollbar::-webkit-scrollbar {
       height: 8px;
       width: 8px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-track {
       background: rgba(15, 23, 42, 0.5);
       border-radius: 4px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-thumb {
       background: rgba(51, 65, 85, 0.6);
       border-radius: 4px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: rgba(71, 85, 105, 0.8);
     }
+
     @keyframes pulseGlow {
-      0%, 100% { opacity: 0.3; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(1.05); }
+
+      0%,
+      100% {
+        opacity: 0.3;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.6;
+        transform: scale(1.05);
+      }
     }
+
     .glow-bg {
       animation: pulseGlow 8s ease-in-out infinite;
     }
   </style>
 </head>
-<body class="text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white relative overflow-x-hidden flex flex-col min-h-screen">
+
+<body
+  class="text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white relative overflow-x-hidden flex flex-col min-h-screen">
 
   <!-- Ambient Glow -->
-  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-600/15 rounded-full blur-3xl pointer-events-none glow-bg"></div>
+  <div
+    class="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-600/15 rounded-full blur-3xl pointer-events-none glow-bg">
+  </div>
 
   <!-- Navbar -->
   <header class="w-full border-b border-white/10 backdrop-blur-md bg-slate-950/40 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 p-2 border border-emerald-400/30">
+        <div
+          class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 p-2 border border-emerald-400/30">
           <i data-lucide="file-spreadsheet" class="w-6 h-6 text-white"></i>
         </div>
         <div>
           <div class="flex items-center space-x-2">
             <span class="font-bold text-lg tracking-tight text-white">csv2xlsx</span>
-            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v1.0.0</span>
+            <span
+              class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v1.0.0</span>
           </div>
           <p class="text-xs text-slate-400 hidden sm:block">Modern CSV to Excel Converter</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-4">
-        <div id="backend-status" class="flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+        <div id="backend-status"
+          class="flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>Sistem Aktif</span>
         </div>
-        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5">
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+          class="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5">
           <i data-lucide="github" class="w-5 h-5"></i>
         </a>
       </div>
@@ -117,70 +145,73 @@
 
   <!-- Main Content -->
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
-    
+
     <!-- Hero Banner -->
     <div class="text-center max-w-2xl mx-auto mb-10">
       <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
-        Ubah Data CSV Menjadi Excel <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Siap Pakai</span>
+        Ubah Data CSV Menjadi Excel
       </h1>
       <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
-        Deteksi otomatis format delimiter & encoding, styling header profesional, auto-filter, dan penyesuaian lebar kolom instan tanpa kirim data ke pihak ketiga.
+        Deteksi otomatis format delimiter & encoding, styling header profesional, auto-filter, dan penyesuaian lebar
+        kolom instan.
       </p>
     </div>
 
     <!-- Converter Card Container -->
     <div class="glass-card rounded-2xl p-6 sm:p-8 transition-all duration-300">
-      
+
       <!-- 1. Dropzone Section (Visible initially) -->
       <div id="dropzone-section">
-        <div 
-          id="dropzone"
-          class="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-xl p-8 sm:p-14 text-center cursor-pointer transition-all duration-200 bg-slate-900/40 hover:bg-slate-900/70 group relative overflow-hidden"
-        >
+        <div id="dropzone"
+          class="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-xl p-8 sm:p-14 text-center cursor-pointer transition-all duration-200 bg-slate-900/40 hover:bg-slate-900/70 group relative overflow-hidden">
           <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden" />
-          
+
           <div class="flex flex-col items-center justify-center space-y-4">
-            <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-200 border border-emerald-500/20">
+            <div
+              class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-200 border border-emerald-500/20">
               <i data-lucide="upload-cloud" class="w-8 h-8"></i>
             </div>
             <div>
               <p class="text-base sm:text-lg font-semibold text-white group-hover:text-emerald-300 transition-colors">
-                Tarik & Lepas file di sini, atau <span class="text-emerald-400 underline decoration-emerald-400/40 underline-offset-4">Pilih File</span>
+                Tarik & Lepas file di sini, atau <span
+                  class="text-emerald-400 underline decoration-emerald-400/40 underline-offset-4">Pilih File</span>
               </p>
               <p class="text-xs sm:text-sm text-slate-400 mt-1">
-                Mendukung format file terdelimitasi <span class="text-slate-300 font-mono">.csv</span>, <span class="text-slate-300 font-mono">.tsv</span>, <span class="text-slate-300 font-mono">.txt</span> (Maksimal 50 MB)
+                Mendukung format file terdelimitasi <span class="text-slate-300 font-mono">.csv</span>, <span
+                  class="text-slate-300 font-mono">.tsv</span>, <span class="text-slate-300 font-mono">.txt</span>
+                (Maksimal 50 MB)
               </p>
             </div>
-            
-            <div class="flex items-center space-x-2 pt-2 text-xs text-slate-500">
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-              <span>100% Pemrosesan Lokal di Server Anda</span>
-            </div>
+
           </div>
         </div>
       </div>
 
       <!-- 2. Loading State (Hidden by default) -->
       <div id="loading-section" class="hidden py-16 text-center">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4 animate-spin">
+        <div
+          class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4 animate-spin">
           <i data-lucide="loader-2" class="w-7 h-7"></i>
         </div>
         <h3 id="loading-title" class="text-lg font-semibold text-white">Menganalisis file CSV...</h3>
-        <p id="loading-desc" class="text-sm text-slate-400 mt-1">Membaca struktur kolom, deteksi pemisah, dan menyiapkan pratinjau data.</p>
+        <p id="loading-desc" class="text-sm text-slate-400 mt-1">Membaca struktur kolom, deteksi pemisah, dan menyiapkan
+          pratinjau data.</p>
       </div>
 
       <!-- 3. Preview & Config Section (Hidden by default) -->
       <div id="preview-section" class="hidden space-y-6">
-        
+
         <!-- File Stats & Actions Bar -->
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/10">
           <div>
             <div class="flex items-center space-x-3">
-              <div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+              <div
+                class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                 <i data-lucide="file-check" class="w-5 h-5"></i>
               </div>
               <div>
-                <h2 id="file-name-display" class="font-bold text-white text-base truncate max-w-xs sm:max-w-md">filename.csv</h2>
+                <h2 id="file-name-display" class="font-bold text-white text-base truncate max-w-xs sm:max-w-md">
+                  filename.csv</h2>
                 <p id="file-size-display" class="text-xs text-slate-400">124 KB</p>
               </div>
             </div>
@@ -188,22 +219,26 @@
 
           <!-- Statistics Badges -->
           <div class="flex flex-wrap items-center gap-2 text-xs">
-            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+            <div
+              class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="rows" class="w-3.5 h-3.5 text-emerald-400"></i>
               <span class="text-slate-400">Baris:</span>
               <span id="stat-rows" class="font-semibold text-white">0</span>
             </div>
-            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+            <div
+              class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="columns" class="w-3.5 h-3.5 text-teal-400"></i>
               <span class="text-slate-400">Kolom:</span>
               <span id="stat-cols" class="font-semibold text-white">0</span>
             </div>
-            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+            <div
+              class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400"></i>
               <span class="text-slate-400">Delimiter:</span>
               <span id="stat-delimiter" class="font-semibold text-white font-mono">,</span>
             </div>
-            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+            <div
+              class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="binary" class="w-3.5 h-3.5 text-indigo-400"></i>
               <span class="text-slate-400">Encoding:</span>
               <span id="stat-encoding" class="font-semibold text-white uppercase font-mono">UTF-8</span>
@@ -218,13 +253,8 @@
             <label for="opt-sheet-name" class="block font-medium text-slate-300 mb-1 flex items-center space-x-1">
               <span>Nama Sheet Excel</span>
             </label>
-            <input 
-              type="text" 
-              id="opt-sheet-name" 
-              maxlength="31" 
-              placeholder="Sheet1"
-              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
-            />
+            <input type="text" id="opt-sheet-name" maxlength="31" placeholder="Sheet1"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors" />
           </div>
 
           <!-- Delimiter Override -->
@@ -232,10 +262,8 @@
             <label for="opt-delimiter" class="block font-medium text-slate-300 mb-1">
               Karakter Pemisah (Delimiter)
             </label>
-            <select 
-              id="opt-delimiter"
-              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
-            >
+            <select id="opt-delimiter"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors">
               <option value="">Otomatis (Hasil Deteksi)</option>
               <option value=",">Koma (,)</option>
               <option value=";">Titik Koma (;)</option>
@@ -246,24 +274,16 @@
 
           <!-- Toggles -->
           <div class="flex items-center space-x-2 pt-5">
-            <input 
-              type="checkbox" 
-              id="opt-autofilter" 
-              checked 
-              class="w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 bg-slate-800"
-            />
+            <input type="checkbox" id="opt-autofilter" checked
+              class="w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 bg-slate-800" />
             <label for="opt-autofilter" class="font-medium text-slate-300 cursor-pointer select-none">
               Auto-Filter Header
             </label>
           </div>
 
           <div class="flex items-center space-x-2 pt-5">
-            <input 
-              type="checkbox" 
-              id="opt-autowidth" 
-              checked 
-              class="w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 bg-slate-800"
-            />
+            <input type="checkbox" id="opt-autowidth" checked
+              class="w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 bg-slate-800" />
             <label for="opt-autowidth" class="font-medium text-slate-300 cursor-pointer select-none">
               Auto-Fit Lebar Kolom
             </label>
@@ -277,12 +297,15 @@
               <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i>
               <span class="font-medium text-slate-300">Pratinjau Data (Sampel 20 Baris Pertama)</span>
             </div>
-            <span id="preview-row-count-badge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 baris ditampilkan</span>
+            <span id="preview-row-count-badge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 baris
+              ditampilkan</span>
           </div>
 
-          <div class="overflow-x-auto rounded-xl border border-slate-700/80 custom-scrollbar max-h-[380px] bg-slate-950/60">
+          <div
+            class="overflow-x-auto rounded-xl border border-slate-700/80 custom-scrollbar max-h-[380px] bg-slate-950/60">
             <table id="preview-table" class="w-full text-left text-xs border-collapse">
-              <thead id="preview-thead" class="sticky top-0 bg-slate-900/95 text-slate-200 border-b border-slate-700/80 shadow-sm z-10">
+              <thead id="preview-thead"
+                class="sticky top-0 bg-slate-900/95 text-slate-200 border-b border-slate-700/80 shadow-sm z-10">
                 <!-- Injected via JS -->
               </thead>
               <tbody id="preview-tbody" class="divide-y divide-slate-800/60 font-mono text-[11px] text-slate-300">
@@ -294,20 +317,14 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-white/10">
-          <button 
-            id="btn-reset" 
-            type="button" 
-            class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center space-x-2 transition-all"
-          >
+          <button id="btn-reset" type="button"
+            class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center space-x-2 transition-all">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
             <span>Ganti File</span>
           </button>
 
-          <button 
-            id="btn-convert" 
-            type="button" 
-            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all"
-          >
+          <button id="btn-convert" type="button"
+            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all">
             <i data-lucide="download" class="w-4 h-4"></i>
             <span id="btn-convert-text">Konversi & Unduh XLSX</span>
           </button>
@@ -320,37 +337,42 @@
     <!-- Feature Highlights -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
       <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
-        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+        <div
+          class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
           <i data-lucide="sparkles" class="w-5 h-5"></i>
         </div>
         <div>
           <h4 class="font-semibold text-sm text-white">Deteksi Otomatis Cerdas</h4>
           <p class="text-xs text-slate-400 mt-1">
-            Menganalisis karakter pemisah (koma, titik koma, tab) dan encoding (UTF-8, Latin-1, dsb) tanpa konfigurasi manual.
+            Menganalisis karakter pemisah (koma, titik koma, tab) dan encoding (UTF-8, Latin-1, dsb) tanpa konfigurasi
+            manual.
           </p>
         </div>
       </div>
 
       <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
-        <div class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20">
+        <div
+          class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20">
           <i data-lucide="layout-grid" class="w-5 h-5"></i>
         </div>
         <div>
           <h4 class="font-semibold text-sm text-white">Excel Rapi & Siap Baca</h4>
           <p class="text-xs text-slate-400 mt-1">
-            Header dengan gaya kontras, fitur filter aktif, auto-fit lebar kolom, serta konversi angka tanpa merusak angka awalan nol.
+            Header dengan gaya kontras, fitur filter aktif, auto-fit lebar kolom, serta konversi angka tanpa merusak
+            angka awalan nol.
           </p>
         </div>
       </div>
 
       <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
-        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20">
+        <div
+          class="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20">
           <i data-lucide="lock" class="w-5 h-5"></i>
         </div>
         <div>
           <h4 class="font-semibold text-sm text-white">Privasi Terjamin</h4>
           <p class="text-xs text-slate-400 mt-1">
-            Berjalan sepenuhnya di server mandiri (*self-hosted*). File sementara langsung dibersihkan setelah proses unduh selesai.
+            Berjalan sepenuhnya di server mandiri (*self-hosted*).
           </p>
         </div>
       </div>
@@ -422,11 +444,10 @@
     // Toast notification utility
     function showToast(message, type = 'error') {
       const toast = document.createElement('div');
-      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-xs font-medium border transition-all duration-300 transform translate-y-2 opacity-0 ${
-        type === 'error' 
-          ? 'bg-rose-950/90 text-rose-200 border-rose-700/50' 
-          : 'bg-emerald-950/90 text-emerald-200 border-emerald-700/50'
-      }`;
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-xs font-medium border transition-all duration-300 transform translate-y-2 opacity-0 ${type === 'error'
+        ? 'bg-rose-950/90 text-rose-200 border-rose-700/50'
+        : 'bg-emerald-950/90 text-emerald-200 border-emerald-700/50'
+        }`;
 
       const icon = type === 'error' ? 'alert-circle' : 'check-circle-2';
       toast.innerHTML = `
@@ -511,7 +532,7 @@
 
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const manualDelim = optDelimiter.value;
       if (manualDelim) {
         formData.append('delimiter', manualDelim);
@@ -557,7 +578,7 @@
       // Render table headers
       previewThead.innerHTML = '';
       const trHead = document.createElement('tr');
-      
+
       // Index column header
       const thIndex = document.createElement('th');
       thIndex.className = 'py-2.5 px-3 text-[11px] font-semibold text-slate-400 bg-slate-900 border-r border-slate-700/60 w-12 text-center';
@@ -713,4 +734,5 @@
     }
   </script>
 </body>
+
 </html>
