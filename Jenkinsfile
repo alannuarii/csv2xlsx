@@ -31,15 +31,26 @@ pipeline {
         stage('Automated Tests') {
             steps {
                 sh '''
-                    # Siapkan file untuk hasil tes agar dapat ditulis oleh non-root user (appuser) di dalam container
-                    touch test-results.xml
-                    chmod 666 test-results.xml
+                    # 1. Buat container dari image (tanpa start)
+                    CONTAINER_ID=$(docker create ${IMAGE_NAME}:${IMAGE_TAG} pytest tests/ -v --junitxml=test-results.xml)
                     
-                    # Jalankan test di dalam container yang baru dibangun, mount direktori tests dan file output
-                    docker run --rm \
-                        -v "${WORKSPACE}/tests:/app/tests" \
-                        -v "${WORKSPACE}/test-results.xml:/app/test-results.xml" \
-                        ${IMAGE_NAME}:${IMAGE_TAG} pytest tests/ -v --junitxml=test-results.xml
+                    # 2. Copy direktori tests dari workspace ke dalam container
+                    docker cp tests $CONTAINER_ID:/app/
+                    
+                    # 3. Jalankan container untuk mengeksekusi pytest dan abaikan error sementara
+                    docker start -a $CONTAINER_ID || true
+                    
+                    # 4. Ambil exit code dari pytest
+                    EXIT_CODE=$(docker inspect $CONTAINER_ID --format='{{.State.ExitCode}}')
+                    
+                    # 5. Copy file hasil test (test-results.xml) dari dalam container ke workspace Jenkins
+                    docker cp $CONTAINER_ID:/app/test-results.xml ./test-results.xml || true
+                    
+                    # 6. Hapus container test
+                    docker rm $CONTAINER_ID
+                    
+                    # 7. Kembalikan exit code pytest agar Jenkins tahu test gagal/sukses
+                    exit $EXIT_CODE
                 '''
             }
             post {
