@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="gridGrad" x1="4" y1="4" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981" />
+      <stop offset="1" stop-color="#047857" />
+    </linearGradient>
+    <filter id="shadow" x="0" y="2" width="64" height="62" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#047857" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Background Card -->
+  <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#gridGrad)" filter="url(#shadow)" />
+  
+  <!-- Grid Borders & Cells -->
+  <rect x="14" y="14" width="36" height="36" rx="6" fill="#064E3B" fill-opacity="0.4" stroke="#A7F3D0" stroke-width="1.5"/>
+  <line x1="14" y1="26" x2="50" y2="26" stroke="#A7F3D0" stroke-width="1.5" stroke-opacity="0.8"/>
+  <line x1="14" y1="38" x2="50" y2="38" stroke="#A7F3D0" stroke-width="1.5" stroke-opacity="0.8"/>
+  <line x1="28" y1="14" x2="28" y2="50" stroke="#A7F3D0" stroke-width="1.5" stroke-opacity="0.8"/>
+  <line x1="40" y1="14" x2="40" y2="50" stroke="#A7F3D0" stroke-width="1.5" stroke-opacity="0.8"/>
+
+  <!-- Subtle Inner Highlights -->
+  <rect x="15" y="15" width="12" height="10" rx="2" fill="#34D399" fill-opacity="0.6"/>
+  <rect x="29" y="27" width="10" height="10" rx="2" fill="#6EE7B7" fill-opacity="0.4"/>
+  <rect x="41" y="39" width="8" height="10" rx="2" fill="#A7F3D0" fill-opacity="0.5"/>
+</svg>

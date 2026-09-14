@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>csv2xlsx - Modern CSV to Excel Converter</title>
+  <meta name="description" content="Konversi file CSV, TSV, dan TXT menjadi spreadsheet Microsoft Excel (.xlsx) dengan auto-detect delimiter, styling profesional, auto-filter, dan auto-fit column." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 0%, #131d2e 0%, #090d16 100%);
+      min-height: 100vh;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    }
+    .glass-card-subtle {
+      background: rgba(30, 41, 59, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.6);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(71, 85, 105, 0.8);
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.05); }
+    }
+    .glow-bg {
+      animation: pulseGlow 8s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white relative overflow-x-hidden flex flex-col min-h-screen">
+
+  <!-- Ambient Glow -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-600/15 rounded-full blur-3xl pointer-events-none glow-bg"></div>
+
+  <!-- Navbar -->
+  <header class="w-full border-b border-white/10 backdrop-blur-md bg-slate-950/40 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 p-2 border border-emerald-400/30">
+          <i data-lucide="file-spreadsheet" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-lg tracking-tight text-white">csv2xlsx</span>
+            <span class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v1.0.0</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Modern CSV to Excel Converter</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <div id="backend-status" class="flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Sistem Aktif</span>
+        </div>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5">
+          <i data-lucide="github" class="w-5 h-5"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <!-- Hero Banner -->
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
+        Ubah Data CSV Menjadi Excel <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Siap Pakai</span>
+      </h1>
+      <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+        Deteksi otomatis format delimiter & encoding, styling header profesional, auto-filter, dan penyesuaian lebar kolom instan tanpa kirim data ke pihak ketiga.
+      </p>
+    </div>
+
+    <!-- Converter Card Container -->
+    <div class="glass-card rounded-2xl p-6 sm:p-8 transition-all duration-300">
+      
+      <!-- 1. Dropzone Section (Visible initially) -->
+      <div id="dropzone-section">
+        <div 
+          id="dropzone"
+          class="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 rounded-xl p-8 sm:p-14 text-center cursor-pointer transition-all duration-200 bg-slate-900/40 hover:bg-slate-900/70 group relative overflow-hidden"
+        >
+          <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden" />
+          
+          <div class="flex flex-col items-center justify-center space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-200 border border-emerald-500/20">
+              <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+            </div>
+            <div>
+              <p class="text-base sm:text-lg font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                Tarik & Lepas file di sini, atau <span class="text-emerald-400 underline decoration-emerald-400/40 underline-offset-4">Pilih File</span>
+              </p>
+              <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                Mendukung format file terdelimitasi <span class="text-slate-300 font-mono">.csv</span>, <span class="text-slate-300 font-mono">.tsv</span>, <span class="text-slate-300 font-mono">.txt</span> (Maksimal 50 MB)
+              </p>
+            </div>
+            
+            <div class="flex items-center space-x-2 pt-2 text-xs text-slate-500">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+              <span>100% Pemrosesan Lokal di Server Anda</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Loading State (Hidden by default) -->
+      <div id="loading-section" class="hidden py-16 text-center">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4 animate-spin">
+          <i data-lucide="loader-2" class="w-7 h-7"></i>
+        </div>
+        <h3 id="loading-title" class="text-lg font-semibold text-white">Menganalisis file CSV...</h3>
+        <p id="loading-desc" class="text-sm text-slate-400 mt-1">Membaca struktur kolom, deteksi pemisah, dan menyiapkan pratinjau data.</p>
+      </div>
+
+      <!-- 3. Preview & Config Section (Hidden by default) -->
+      <div id="preview-section" class="hidden space-y-6">
+        
+        <!-- File Stats & Actions Bar -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/10">
+          <div>
+            <div class="flex items-center space-x-3">
+              <div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                <i data-lucide="file-check" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 id="file-name-display" class="font-bold text-white text-base truncate max-w-xs sm:max-w-md">filename.csv</h2>
+                <p id="file-size-display" class="text-xs text-slate-400">124 KB</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Badges -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+              <i data-lucide="rows" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span class="text-slate-400">Baris:</span>
+              <span id="stat-rows" class="font-semibold text-white">0</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+              <i data-lucide="columns" class="w-3.5 h-3.5 text-teal-400"></i>
+              <span class="text-slate-400">Kolom:</span>
+              <span id="stat-cols" class="font-semibold text-white">0</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+              <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span class="text-slate-400">Delimiter:</span>
+              <span id="stat-delimiter" class="font-semibold text-white font-mono">,</span>
+            </div>
+            <div class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+              <i data-lucide="binary" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span class="text-slate-400">Encoding:</span>
+              <span id="stat-encoding" class="font-semibold text-white uppercase font-mono">UTF-8</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuration Settings Bar -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl glass-card-subtle text-xs">
+          <!-- Sheet Name -->
+          <div>
+            <label for="opt-sheet-name" class="block font-medium text-slate-300 mb-1 flex items-center space-x-1">
+              <span>Nama Sheet Excel</span>
+            </label>
+            <input 
+              type="text" 
+              id="opt-sheet-name" 
+              maxlength="31" 
+              placeholder="Sheet1"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          <!-- Delimiter Override -->
+          <div>
+            <label for="opt-delimiter" class="block font-medium text-slate-300 mb-1">
+              Karakter Pemisah (Delimiter)
+            </label>
+            <select 
+              id="opt-delimiter"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
+            >
+              <option value="">Otomatis (Hasil Deteksi)</option>
+              <option value=",">Koma (,)</option>
+              <option value=";">Titik Koma (;)</option>
+              <option value="&#9;">Tab (\t)</option>
+              <option value="|">Pipa (|)</option>
+            </select>
+          </div>
+
+          <!-- Toggles -->
+          <div class="flex items-center space-x-2 pt-5">
+            <input 
+              type="checkbox" 
+              id="opt-autofilter" 
+              checked 
+              class="w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 bg-slate-800"
+            />
+            <label for="opt-autofilter" class="font-medium text-slate-300 cursor-pointer select-none">
+              Auto-Filter Header
+            </label>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-5">
+            <input 
+              type="checkbox" 
+              id="opt-autowidth" 
+              checked 
+              class="w-4 h-4 rounded border-slate-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 bg-slate-800"
+            />
+            <label for="opt-autowidth" class="font-medium text-slate-300 cursor-pointer select-none">
+              Auto-Fit Lebar Kolom
+            </label>
+          </div>
+        </div>
+
+        <!-- Table Preview -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <div class="flex items-center space-x-1.5">
+              <i data-lucide="table" class="w-4 h-4 text-emerald-400"></i>
+              <span class="font-medium text-slate-300">Pratinjau Data (Sampel 20 Baris Pertama)</span>
+            </div>
+            <span id="preview-row-count-badge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 baris ditampilkan</span>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-700/80 custom-scrollbar max-h-[380px] bg-slate-950/60">
+            <table id="preview-table" class="w-full text-left text-xs border-collapse">
+              <thead id="preview-thead" class="sticky top-0 bg-slate-900/95 text-slate-200 border-b border-slate-700/80 shadow-sm z-10">
+                <!-- Injected via JS -->
+              </thead>
+              <tbody id="preview-tbody" class="divide-y divide-slate-800/60 font-mono text-[11px] text-slate-300">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-white/10">
+          <button 
+            id="btn-reset" 
+            type="button" 
+            class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-center space-x-2 transition-all"
+          >
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span>Ganti File</span>
+          </button>
+
+          <button 
+            id="btn-convert" 
+            type="button" 
+            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+          >
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span id="btn-convert-text">Konversi & Unduh XLSX</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+      <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
+        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm text-white">Deteksi Otomatis Cerdas</h4>
+          <p class="text-xs text-slate-400 mt-1">
+            Menganalisis karakter pemisah (koma, titik koma, tab) dan encoding (UTF-8, Latin-1, dsb) tanpa konfigurasi manual.
+          </p>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
+        <div class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20">
+          <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm text-white">Excel Rapi & Siap Baca</h4>
+          <p class="text-xs text-slate-400 mt-1">
+            Header dengan gaya kontras, fitur filter aktif, auto-fit lebar kolom, serta konversi angka tanpa merusak angka awalan nol.
+          </p>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
+        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/20">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm text-white">Privasi Terjamin</h4>
+          <p class="text-xs text-slate-400 mt-1">
+            Berjalan sepenuhnya di server mandiri (*self-hosted*). File sementara langsung dibersihkan setelah proses unduh selesai.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="w-full border-t border-white/10 py-6 mt-12 bg-slate-950/40 text-center text-xs text-slate-500">
+    <p>csv2xlsx &bull; Self-Hosted Fast Delimited to Excel Spreadsheet Converter &bull; FastAPI Monolith</p>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    // State management
+    let currentFile = null;
+    let previewData = null;
+
+    // Elements
+    const dropzoneSection = document.getElementById('dropzone-section');
+    const loadingSection = document.getElementById('loading-section');
+    const previewSection = document.getElementById('preview-section');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const loadingTitle = document.getElementById('loading-title');
+    const loadingDesc = document.getElementById('loading-desc');
+
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const fileSizeDisplay = document.getElementById('file-size-display');
+    const statRows = document.getElementById('stat-rows');
+    const statCols = document.getElementById('stat-cols');
+    const statDelimiter = document.getElementById('stat-delimiter');
+    const statEncoding = document.getElementById('stat-encoding');
+
+    const optSheetName = document.getElementById('opt-sheet-name');
+    const optDelimiter = document.getElementById('opt-delimiter');
+    const optAutofilter = document.getElementById('opt-autofilter');
+    const optAutowidth = document.getElementById('opt-autowidth');
+
+    const previewThead = document.getElementById('preview-thead');
+    const previewTbody = document.getElementById('preview-tbody');
+    const previewRowCountBadge = document.getElementById('preview-row-count-badge');
+
+    const btnConvert = document.getElementById('btn-convert');
+    const btnConvertText = document.getElementById('btn-convert-text');
+    const btnReset = document.getElementById('btn-reset');
+    const toastContainer = document.getElementById('toast-container');
+
+    // Initialize icons
+    lucide.createIcons();
+
+    // Healthcheck ping
+    async function checkHealth() {
+      try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          const statusEl = document.getElementById('backend-status');
+          statusEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.warn('Backend health check error:', err);
+      }
+    }
+    checkHealth();
+
+    // Toast notification utility
+    function showToast(message, type = 'error') {
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-xs font-medium border transition-all duration-300 transform translate-y-2 opacity-0 ${
+        type === 'error' 
+          ? 'bg-rose-950/90 text-rose-200 border-rose-700/50' 
+          : 'bg-emerald-950/90 text-emerald-200 border-emerald-700/50'
+      }`;
+
+      const icon = type === 'error' ? 'alert-circle' : 'check-circle-2';
+      toast.innerHTML = `
+        <i data-lucide="${icon}" class="w-4 h-4 shrink-0"></i>
+        <span>${message}</span>
+      `;
+      toastContainer.appendChild(toast);
+      lucide.createIcons({ root: toast });
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Format bytes
+    function formatBytes(bytes, decimals = 1) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Format delimiter label
+    function getDelimiterLabel(d) {
+      if (d === ',') return 'Koma ( , )';
+      if (d === ';') return 'Titik Koma ( ; )';
+      if (d === '\t') return 'Tab ( \\t )';
+      if (d === '|') return 'Pipa ( | )';
+      return `Kustom ( ${d} )`;
+    }
+
+    // Drag & drop handlers
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('border-emerald-400', 'bg-slate-900/80');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('border-emerald-400', 'bg-slate-900/80');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files.length > 0) {
+        handleFileSelection(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelection(e.target.files[0]);
+      }
+    });
+
+    // File selection & preview fetch
+    async function handleFileSelection(file) {
+      // Validate size (50MB)
+      if (file.size > 50 * 1024 * 1024) {
+        showToast('Ukuran file melebihi batas maksimum 50 MB.', 'error');
+        return;
+      }
+
+      currentFile = file;
+      showLoading('Menganalisis file...', 'Membaca struktur dan menyiapkan pratinjau');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const manualDelim = optDelimiter.value;
+      if (manualDelim) {
+        formData.append('delimiter', manualDelim);
+      }
+
+      try {
+        const response = await fetch('/api/preview', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({ detail: 'Gagal memproses file.' }));
+          throw new Error(errData.detail || 'Terjadi kesalahan saat memproses CSV.');
+        }
+
+        previewData = await response.json();
+        renderPreview(file, previewData);
+      } catch (err) {
+        showToast(err.message, 'error');
+        resetToUpload();
+      }
+    }
+
+    // Render Preview
+    function renderPreview(file, data) {
+      hideLoading();
+      dropzoneSection.classList.add('hidden');
+      previewSection.classList.remove('hidden');
+
+      // Update header info
+      fileNameDisplay.textContent = file.name;
+      fileSizeDisplay.textContent = formatBytes(file.size);
+      statRows.textContent = data.total_rows.toLocaleString('id-ID');
+      statCols.textContent = data.total_columns.toLocaleString('id-ID');
+      statDelimiter.textContent = data.detected_delimiter === '\t' ? '\\t' : data.detected_delimiter;
+      statEncoding.textContent = data.detected_encoding;
+
+      // Suggest sheet name based on file stem
+      const stem = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+      optSheetName.value = stem.substring(0, 31);
+
+      // Render table headers
+      previewThead.innerHTML = '';
+      const trHead = document.createElement('tr');
+      
+      // Index column header
+      const thIndex = document.createElement('th');
+      thIndex.className = 'py-2.5 px-3 text-[11px] font-semibold text-slate-400 bg-slate-900 border-r border-slate-700/60 w-12 text-center';
+      thIndex.textContent = '#';
+      trHead.appendChild(thIndex);
+
+      data.headers.forEach(h => {
+        const th = document.createElement('th');
+        th.className = 'py-2.5 px-4 text-[11px] font-semibold text-white tracking-wider whitespace-nowrap border-r border-slate-800 last:border-r-0';
+        th.textContent = h || '(Kolom Tanpa Nama)';
+        trHead.appendChild(th);
+      });
+      previewThead.appendChild(trHead);
+
+      // Render preview rows
+      previewTbody.innerHTML = '';
+      data.preview_rows.forEach((row, rIdx) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition-colors';
+
+        // Index cell
+        const tdIndex = document.createElement('td');
+        tdIndex.className = 'py-2 px-3 text-slate-500 bg-slate-900/60 border-r border-slate-800 text-center select-none font-mono text-[10px]';
+        tdIndex.textContent = rIdx + 1;
+        tr.appendChild(tdIndex);
+
+        // Ensure row has cells matching header count
+        const colCount = Math.max(data.headers.length, row.length);
+        for (let c = 0; c < colCount; c++) {
+          const td = document.createElement('td');
+          td.className = 'py-2 px-4 whitespace-nowrap border-r border-slate-800/50 last:border-r-0 text-slate-300';
+          td.textContent = row[c] !== undefined ? row[c] : '';
+          tr.appendChild(td);
+        }
+        previewTbody.appendChild(tr);
+      });
+
+      previewRowCountBadge.textContent = `${data.preview_rows.length} dari ${data.total_rows} baris ditampilkan`;
+      lucide.createIcons();
+    }
+
+    // Delimiter change event (re-fetch preview if user changes delimiter)
+    optDelimiter.addEventListener('change', () => {
+      if (currentFile) {
+        handleFileSelection(currentFile);
+      }
+    });
+
+    // Convert & Download handler
+    btnConvert.addEventListener('click', async () => {
+      if (!currentFile) return;
+
+      setConvertLoading(true);
+
+      const formData = new FormData();
+      formData.append('file', currentFile);
+
+      const sheetName = optSheetName.value.trim();
+      if (sheetName) {
+        formData.append('sheet_name', sheetName);
+      }
+
+      const manualDelim = optDelimiter.value;
+      if (manualDelim) {
+        formData.append('delimiter', manualDelim);
+      }
+
+      formData.append('apply_autofilter', optAutofilter.checked);
+      formData.append('apply_autowidth', optAutowidth.checked);
+
+      try {
+        const response = await fetch('/api/convert', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({ detail: 'Gagal mengonversi file.' }));
+          throw new Error(errData.detail || 'Terjadi kesalahan saat konversi XLSX.');
+        }
+
+        // Trigger browser download
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+
+        // Parse filename from header or fallback
+        const disposition = response.headers.get('Content-Disposition');
+        let downloadName = 'converted_data.xlsx';
+        if (disposition && disposition.includes('filename=')) {
+          const match = disposition.match(/filename="?([^"]+)"?/);
+          if (match && match[1]) {
+            downloadName = match[1];
+          }
+        } else {
+          const stem = currentFile.name.substring(0, currentFile.name.lastIndexOf('.')) || 'data';
+          downloadName = `${stem}.xlsx`;
+        }
+
+        a.download = downloadName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showToast('File Excel berhasil diunduh!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        setConvertLoading(false);
+      }
+    });
+
+    // Reset button
+    btnReset.addEventListener('click', resetToUpload);
+
+    function resetToUpload() {
+      currentFile = null;
+      previewData = null;
+      fileInput.value = '';
+      optDelimiter.value = '';
+      optSheetName.value = '';
+      hideLoading();
+      previewSection.classList.add('hidden');
+      dropzoneSection.classList.remove('hidden');
+    }
+
+    function showLoading(title, desc) {
+      dropzoneSection.classList.add('hidden');
+      previewSection.classList.add('hidden');
+      loadingSection.classList.remove('hidden');
+      loadingTitle.textContent = title;
+      loadingDesc.textContent = desc;
+      lucide.createIcons();
+    }
+
+    function hideLoading() {
+      loadingSection.classList.add('hidden');
+    }
+
+    function setConvertLoading(isLoading) {
+      if (isLoading) {
+        btnConvert.disabled = true;
+        btnConvert.classList.add('opacity-75', 'cursor-not-allowed');
+        btnConvertText.textContent = 'Memproses XLSX...';
+      } else {
+        btnConvert.disabled = false;
+        btnConvert.classList.remove('opacity-75', 'cursor-not-allowed');
+        btnConvertText.textContent = 'Konversi & Unduh XLSX';
+      }
+    }
+  </script>
+</body>
+</html>
