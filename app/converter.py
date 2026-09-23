@@ -7,9 +7,11 @@ pratitinjau (preview) data, dan pembuatan workbook Excel berformat profesional.
 from __future__ import annotations
 
 import csv
+import datetime
 import io
 import math
 import re
+import zipfile
 from typing import Any, List, Optional, Tuple
 
 import charset_normalizer
@@ -40,6 +42,29 @@ def validate_file_content(data: bytes) -> None:
     sample = data[:8192]
     if b"\x00" in sample:
         raise ConversionError("File terdeteksi sebagai biner dan bukan teks CSV/TSV yang valid.")
+
+
+def validate_xlsx_content(data: bytes) -> None:
+    """Validate that uploaded content is a valid, readable Excel (.xlsx) file.
+
+    Raises:
+        ConversionError: If file is empty or not a valid XLSX archive.
+    """
+    if not data or len(data.strip()) == 0:
+        raise ConversionError("File Excel kosong atau tidak memiliki data.")
+
+    # XLSX is a ZIP package starting with PK\x03\x04
+    if not data.startswith(b"PK\x03\x04"):
+        raise ConversionError("File bukan merupakan format spreadsheet Excel (.xlsx) yang valid.")
+
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            namelist = zf.namelist()
+            # Standard XLSX files contain workbook.xml or [Content_Types].xml
+            if not any("xl/workbook.xml" in name or "[Content_Types].xml" in name for name in namelist):
+                raise ConversionError("Struktur file Excel (.xlsx) tidak valid atau rusak.")
+    except (zipfile.BadZipFile, Exception):
+        raise ConversionError("File Excel (.xlsx) rusak atau tidak dapat dibaca.")
 
 
 def detect_encoding(raw_bytes: bytes) -> str:
@@ -400,3 +425,216 @@ def convert_csv_to_xlsx(
 
     # Save to output stream
     wb.save(output_stream)
+
+
+def format_xlsx_cell_value(val: Any) -> str:
+    """Format an Excel cell value for CSV conversion and preview."""
+    if val is None:
+        return ""
+    if isinstance(val, (datetime.datetime, datetime.date, datetime.time)):
+        if isinstance(val, datetime.datetime):
+            if val.time() == datetime.time(0, 0, 0):
+                return val.strftime("%Y-%m-%d")
+            return val.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(val, datetime.date):
+            return val.isoformat()
+        elif isinstance(val, datetime.time):
+            return val.isoformat()
+    if isinstance(val, bool):
+        return "true" if val else "false"
+    if isinstance(val, float):
+        if math.isnan(val) or math.isinf(val):
+            return ""
+        if val.is_integer():
+            return str(int(val))
+        return str(val)
+    return str(val)
+
+
+def read_xlsx_preview(
+    file_bytes: bytes,
+    sheet_name: Optional[str] = None,
+    max_preview_rows: int = 20,
+    filename: str = "",
+) -> dict:
+    """Parse XLSX bytes to extract sheet names, metadata, and preview rows.
+
+    Args:
+        file_bytes: Raw bytes of uploaded XLSX file.
+        sheet_name: Optional sheet name to preview. If not specified, uses active sheet.
+        max_preview_rows: Number of preview rows to return (default: 20).
+        filename: Original file name.
+
+    Returns:
+        Dictionary containing sheet names, active sheet, dimensions, headers, and preview rows.
+    """
+    validate_xlsx_content(file_bytes)
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True, read_only=True)
+    except Exception as e:
+        raise ConversionError(f"Gagal membaca file Excel (.xlsx): {str(e)}")
+
+    sheet_names = wb.sheetnames
+    if not sheet_names:
+        wb.close()
+        raise ConversionError("File Excel tidak memiliki lembar kerja (worksheet).")
+
+    if sheet_name and sheet_name in sheet_names:
+        target_sheet = sheet_name
+    elif wb.active and wb.active.title in sheet_names:
+        target_sheet = wb.active.title
+    else:
+        target_sheet = sheet_names[0]
+
+    ws = wb[target_sheet]
+
+    rows_data: List[List[str]] = []
+    headers: List[str] = []
+    total_rows = 0
+    max_cols = 0
+    empty_buffer_count = 0
+
+    try:
+        for row in ws.iter_rows(values_only=True):
+            formatted_row = [format_xlsx_cell_value(c) for c in row] if row else []
+            is_empty = not any(bool(c.strip()) for c in formatted_row)
+
+            if is_empty:
+                if total_rows > 0:
+                    empty_buffer_count += 1
+            else:
+                total_rows += empty_buffer_count + 1
+                empty_buffer_count = 0
+
+                # Determine max columns
+                last_idx = 0
+                for idx, c in enumerate(formatted_row):
+                    if c.strip():
+                        last_idx = idx + 1
+                if last_idx > max_cols:
+                    max_cols = last_idx
+
+                if not headers:
+                    headers = formatted_row
+                elif len(rows_data) < max_preview_rows:
+                    rows_data.append(formatted_row)
+    finally:
+        wb.close()
+
+    if total_rows == 0 or max_cols == 0:
+        raise ConversionError(f"Lembar kerja '{target_sheet}' kosong atau tidak memiliki data.")
+
+    # Normalize column lengths up to max_cols
+    normalized_headers = headers[:max_cols] + [""] * max(0, max_cols - len(headers))
+    normalized_rows = [
+        row[:max_cols] + [""] * max(0, max_cols - len(row))
+        for row in rows_data
+    ]
+
+    return {
+        "success": True,
+        "filename": filename,
+        "sheets": sheet_names,
+        "active_sheet": target_sheet,
+        "total_rows": total_rows,
+        "total_columns": max_cols,
+        "headers": normalized_headers,
+        "preview_rows": normalized_rows,
+    }
+
+
+def convert_xlsx_to_csv(
+    file_bytes: bytes,
+    output_stream: io.BufferedIOBase | io.TextIOBase,
+    sheet_name: Optional[str] = None,
+    delimiter: str = ",",
+    encoding: str = "utf-8-sig",
+) -> None:
+    """Convert an Excel (.xlsx) worksheet to a delimited CSV file written to output_stream.
+
+    Args:
+        file_bytes: Raw bytes of uploaded XLSX file.
+        output_stream: Writable binary or text stream.
+        sheet_name: Specific worksheet name to export. Defaults to active sheet.
+        delimiter: Delimiter character (',', ';', '\t', '|'). Defaults to ','.
+        encoding: Output encoding ('utf-8-sig', 'utf-8', 'latin-1', 'windows-1252'). Defaults to 'utf-8-sig'.
+    """
+    validate_xlsx_content(file_bytes)
+
+    if delimiter not in ALLOWED_DELIMITERS:
+        delimiter = ","
+
+    clean_enc = encoding.lower().strip() if encoding else "utf-8-sig"
+    if clean_enc in ("utf8-bom", "utf-8-bom", "utf-8-sig", "utf8-sig"):
+        clean_enc = "utf-8-sig"
+    elif clean_enc in ("utf-8", "utf8"):
+        clean_enc = "utf-8"
+    elif clean_enc in ("latin-1", "latin1", "iso-8859-1"):
+        clean_enc = "latin-1"
+    elif clean_enc in ("windows-1252", "cp1252"):
+        clean_enc = "windows-1252"
+    else:
+        clean_enc = "utf-8-sig"
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes), data_only=True, read_only=True)
+    except Exception as e:
+        raise ConversionError(f"Gagal membaca file Excel (.xlsx): {str(e)}")
+
+    sheet_names = wb.sheetnames
+    if not sheet_names:
+        wb.close()
+        raise ConversionError("File Excel tidak memiliki lembar kerja (worksheet).")
+
+    if sheet_name and sheet_name in sheet_names:
+        target_sheet = sheet_name
+    elif wb.active and wb.active.title in sheet_names:
+        target_sheet = wb.active.title
+    else:
+        target_sheet = sheet_names[0]
+
+    ws = wb[target_sheet]
+
+    # Prepare text stream wrapper if binary stream
+    wrapper = None
+    if isinstance(output_stream, (io.RawIOBase, io.BufferedIOBase)):
+        wrapper = io.TextIOWrapper(output_stream, encoding=clean_enc, newline="", write_through=True)
+        text_out = wrapper
+    else:
+        text_out = output_stream
+
+    writer = csv.writer(
+        text_out,
+        delimiter=delimiter,
+        quoting=csv.QUOTE_MINIMAL,
+        lineterminator="\n",
+    )
+
+    empty_rows_buffer: List[List[str]] = []
+    rows_written = 0
+
+    try:
+        for row in ws.iter_rows(values_only=True):
+            formatted_row = [format_xlsx_cell_value(c) for c in row] if row else []
+            is_empty = not any(bool(c.strip()) for c in formatted_row)
+
+            if is_empty:
+                if rows_written > 0:
+                    empty_rows_buffer.append(formatted_row)
+            else:
+                for eb in empty_rows_buffer:
+                    writer.writerow(eb)
+                    rows_written += 1
+                empty_rows_buffer.clear()
+
+                writer.writerow(formatted_row)
+                rows_written += 1
+    finally:
+        wb.close()
+        if wrapper is not None:
+            wrapper.flush()
+            wrapper.detach()
+
+    if rows_written == 0:
+        raise ConversionError(f"Lembar kerja '{target_sheet}' tidak mengandung data.")

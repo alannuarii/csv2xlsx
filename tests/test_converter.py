@@ -7,12 +7,16 @@ import pytest
 from app.converter import (
     ConversionError,
     convert_csv_to_xlsx,
+    convert_xlsx_to_csv,
     detect_delimiter,
     detect_encoding,
+    format_xlsx_cell_value,
     parse_cell_value,
     read_csv_preview,
+    read_xlsx_preview,
     sanitize_sheet_name,
     validate_file_content,
+    validate_xlsx_content,
 )
 
 
@@ -134,3 +138,119 @@ def test_convert_csv_to_xlsx():
 
     # Check Auto-filter
     assert ws.auto_filter.ref is not None
+
+
+def test_validate_xlsx_content():
+    with pytest.raises(ConversionError, match="kosong"):
+        validate_xlsx_content(b"")
+
+    with pytest.raises(ConversionError, match="bukan merupakan format spreadsheet"):
+        validate_xlsx_content(b"hello world, this is text")
+
+    with pytest.raises(ConversionError, match="rusak atau tidak dapat dibaca"):
+        validate_xlsx_content(b"PK\x03\x041234567890")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["A", "B"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    validate_xlsx_content(buf.getvalue())
+
+
+def test_format_xlsx_cell_value():
+    import datetime
+    assert format_xlsx_cell_value(None) == ""
+    assert format_xlsx_cell_value(123) == "123"
+    assert format_xlsx_cell_value(45.0) == "45"
+    assert format_xlsx_cell_value(45.5) == "45.5"
+    assert format_xlsx_cell_value(True) == "true"
+    assert format_xlsx_cell_value(False) == "false"
+    assert format_xlsx_cell_value(datetime.date(2026, 9, 23)) == "2026-09-23"
+    assert format_xlsx_cell_value(datetime.datetime(2026, 9, 23, 15, 30, 0)) == "2026-09-23 15:30:00"
+    assert format_xlsx_cell_value(datetime.datetime(2026, 9, 23, 0, 0, 0)) == "2026-09-23"
+
+
+def test_read_xlsx_preview():
+    wb = openpyxl.Workbook()
+    ws1 = wb.active
+    ws1.title = "Karyawan"
+    ws1.append(["id", "nama", "jabatan"])
+    ws1.append([1, "Budi Santoso", "Manager"])
+    ws1.append([2, "Siti Rahma", "Developer"])
+
+    ws2 = wb.create_sheet(title="Departemen")
+    ws2.append(["dept_id", "dept_name"])
+    ws2.append(["IT", "Teknologi Informasi"])
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    raw_xlsx = buf.getvalue()
+
+    # Preview default (first) sheet
+    preview = read_xlsx_preview(raw_xlsx, filename="data.xlsx")
+    assert preview["success"] is True
+    assert preview["filename"] == "data.xlsx"
+    assert preview["sheets"] == ["Karyawan", "Departemen"]
+    assert preview["active_sheet"] == "Karyawan"
+    assert preview["total_rows"] == 3
+    assert preview["total_columns"] == 3
+    assert preview["headers"] == ["id", "nama", "jabatan"]
+    assert len(preview["preview_rows"]) == 2
+    assert preview["preview_rows"][0] == ["1", "Budi Santoso", "Manager"]
+
+    # Preview second sheet specifically
+    preview_dept = read_xlsx_preview(raw_xlsx, sheet_name="Departemen", filename="data.xlsx")
+    assert preview_dept["active_sheet"] == "Departemen"
+    assert preview_dept["headers"] == ["dept_id", "dept_name"]
+    assert preview_dept["total_rows"] == 2
+    assert preview_dept["preview_rows"][0] == ["IT", "Teknologi Informasi"]
+
+
+def test_convert_xlsx_to_csv_delimiters_and_encodings():
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Produk"
+    ws.append(["kode", "nama_produk", "harga", "tersedia"])
+    ws.append(["P01", "Kopi Robusta", 25000, True])
+    ws.append(["P02", "Teh Melati", 15000.5, False])
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    raw_xlsx = buf.getvalue()
+
+    # 1. Comma with default utf-8-sig
+    out_sig = io.BytesIO()
+    convert_xlsx_to_csv(raw_xlsx, out_sig, sheet_name="Produk", delimiter=",", encoding="utf-8-sig")
+    sig_bytes = out_sig.getvalue()
+    assert sig_bytes.startswith(b"\xef\xbb\xbf")
+    decoded = sig_bytes.decode("utf-8-sig")
+    assert "kode,nama_produk,harga,tersedia\n" in decoded
+    assert "P01,Kopi Robusta,25000,true\n" in decoded
+    assert "P02,Teh Melati,15000.5,false" in decoded
+
+    # 2. Semicolon with utf-8 (no BOM)
+    out_semi = io.BytesIO()
+    convert_xlsx_to_csv(raw_xlsx, out_semi, sheet_name="Produk", delimiter=";", encoding="utf-8")
+    semi_bytes = out_semi.getvalue()
+    assert not semi_bytes.startswith(b"\xef\xbb\xbf")
+    decoded_semi = semi_bytes.decode("utf-8")
+    assert "kode;nama_produk;harga;tersedia\n" in decoded_semi
+    assert "P01;Kopi Robusta;25000;true\n" in decoded_semi
+
+    # 3. Tab delimiter
+    out_tab = io.BytesIO()
+    convert_xlsx_to_csv(raw_xlsx, out_tab, sheet_name="Produk", delimiter="\t")
+    decoded_tab = out_tab.getvalue().decode("utf-8-sig")
+    assert "kode\tnama_produk\tharga\ttersedia\n" in decoded_tab
+
+
+def test_convert_xlsx_empty_sheet_error():
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Kosong"
+    buf = io.BytesIO()
+    wb.save(buf)
+
+    with pytest.raises(ConversionError, match="tidak mengandung data|kosong"):
+        convert_xlsx_to_csv(buf.getvalue(), io.BytesIO())

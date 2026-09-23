@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CSV to Excel Converter</title>
+  <title>CSV & Excel Converter | csv2xlsx</title>
   <meta name="description"
-    content="Konversi file CSV, TSV, dan TXT menjadi spreadsheet Microsoft Excel (.xlsx) dengan auto-detect delimiter, styling profesional, auto-filter, dan auto-fit column." />
+    content="Konversi data dua arah antara CSV/TSV dan spreadsheet Microsoft Excel (.xlsx) dengan deteksi format otomatis, dukungan multi-sheet, format UTF-8 BOM, dan pratinjau tabel instan." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <!-- Google Fonts: Inter -->
@@ -117,15 +117,15 @@
       <div class="flex items-center space-x-3">
         <div
           class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20 p-2 border border-emerald-400/30">
-          <i data-lucide="file-spreadsheet" class="w-6 h-6 text-white"></i>
+          <i data-lucide="arrow-left-right" class="w-5 h-5 text-white"></i>
         </div>
         <div>
           <div class="flex items-center space-x-2">
             <span class="font-bold text-lg tracking-tight text-white">csv2xlsx</span>
             <span
-              class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v1.0.0</span>
+              class="text-[10px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">v1.1.0</span>
           </div>
-          <p class="text-xs text-slate-400 hidden sm:block">Modern CSV to Excel Converter</p>
+          <p class="text-xs text-slate-400 hidden sm:block">CSV &bull; Excel Bidirectional Converter</p>
         </div>
       </div>
 
@@ -146,12 +146,28 @@
   <!-- Main Content -->
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
+    <!-- Mode Switcher Tabs -->
+    <div class="flex items-center justify-center mb-8">
+      <div class="inline-flex p-1.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 shadow-xl">
+        <button id="tab-csv2xlsx" type="button"
+          class="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          <span>CSV ke Excel (.xlsx)</span>
+        </button>
+        <button id="tab-xlsx2csv" type="button"
+          class="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 hover:bg-slate-800/60">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+          <span>Excel (.xlsx) ke CSV</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Hero Banner -->
     <div class="text-center max-w-2xl mx-auto mb-10">
-      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
+      <h1 id="hero-title" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
         Ubah Data CSV Menjadi Excel
       </h1>
-      <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+      <p id="hero-desc" class="text-sm sm:text-base text-slate-400 leading-relaxed">
         Deteksi otomatis format delimiter & encoding, styling header profesional, auto-filter, dan penyesuaian lebar
         kolom instan.
       </p>
@@ -167,7 +183,7 @@
           <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden" />
 
           <div class="flex flex-col items-center justify-center space-y-4">
-            <div
+            <div id="dropzone-icon-box"
               class="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all duration-200 border border-emerald-500/20">
               <i data-lucide="upload-cloud" class="w-8 h-8"></i>
             </div>
@@ -176,7 +192,7 @@
                 Tarik & Lepas file di sini, atau <span
                   class="text-emerald-400 underline decoration-emerald-400/40 underline-offset-4">Pilih File</span>
               </p>
-              <p class="text-xs sm:text-sm text-slate-400 mt-1">
+              <p id="dropzone-hint" class="text-xs sm:text-sm text-slate-400 mt-1">
                 Mendukung format file terdelimitasi <span class="text-slate-300 font-mono">.csv</span>, <span
                   class="text-slate-300 font-mono">.tsv</span>, <span class="text-slate-300 font-mono">.txt</span>
                 (Maksimal 50 MB)
@@ -193,9 +209,8 @@
           class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-4 animate-spin">
           <i data-lucide="loader-2" class="w-7 h-7"></i>
         </div>
-        <h3 id="loading-title" class="text-lg font-semibold text-white">Menganalisis file CSV...</h3>
-        <p id="loading-desc" class="text-sm text-slate-400 mt-1">Membaca struktur kolom, deteksi pemisah, dan menyiapkan
-          pratinjau data.</p>
+        <h3 id="loading-title" class="text-lg font-semibold text-white">Menganalisis file...</h3>
+        <p id="loading-desc" class="text-sm text-slate-400 mt-1">Membaca struktur data dan menyiapkan pratinjau.</p>
       </div>
 
       <!-- 3. Preview & Config Section (Hidden by default) -->
@@ -205,7 +220,7 @@
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-white/10">
           <div>
             <div class="flex items-center space-x-3">
-              <div
+              <div id="file-icon-box"
                 class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                 <i data-lucide="file-check" class="w-5 h-5"></i>
               </div>
@@ -217,8 +232,8 @@
             </div>
           </div>
 
-          <!-- Statistics Badges -->
-          <div class="flex flex-wrap items-center gap-2 text-xs">
+          <!-- Statistics Badges Container -->
+          <div id="stats-container" class="flex flex-wrap items-center gap-2 text-xs">
             <div
               class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="rows" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -231,23 +246,39 @@
               <span class="text-slate-400">Kolom:</span>
               <span id="stat-cols" class="font-semibold text-white">0</span>
             </div>
-            <div
+
+            <!-- Stats for CSV -> XLSX -->
+            <div id="stat-box-delimiter"
               class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="split" class="w-3.5 h-3.5 text-cyan-400"></i>
               <span class="text-slate-400">Delimiter:</span>
               <span id="stat-delimiter" class="font-semibold text-white font-mono">,</span>
             </div>
-            <div
+            <div id="stat-box-encoding"
               class="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
               <i data-lucide="binary" class="w-3.5 h-3.5 text-indigo-400"></i>
               <span class="text-slate-400">Encoding:</span>
               <span id="stat-encoding" class="font-semibold text-white uppercase font-mono">UTF-8</span>
             </div>
+
+            <!-- Stats for XLSX -> CSV -->
+            <div id="stat-box-sheet"
+              class="hidden px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span class="text-slate-400">Sheet:</span>
+              <span id="stat-active-sheet" class="font-semibold text-white">Sheet1</span>
+            </div>
+            <div id="stat-box-total-sheets"
+              class="hidden px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center space-x-1.5">
+              <i data-lucide="files" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span class="text-slate-400">Total Sheet:</span>
+              <span id="stat-total-sheets" class="font-semibold text-white">1</span>
+            </div>
           </div>
         </div>
 
-        <!-- Configuration Settings Bar -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl glass-card-subtle text-xs">
+        <!-- Configuration Settings: CSV ke XLSX -->
+        <div id="config-csv2xlsx" class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl glass-card-subtle text-xs">
           <!-- Sheet Name -->
           <div>
             <label for="opt-sheet-name" class="block font-medium text-slate-300 mb-1 flex items-center space-x-1">
@@ -290,6 +321,51 @@
           </div>
         </div>
 
+        <!-- Configuration Settings: XLSX ke CSV -->
+        <div id="config-xlsx2csv" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl glass-card-subtle text-xs">
+          <!-- Sheet Selector -->
+          <div>
+            <label for="opt-xlsx-sheet" class="block font-medium text-slate-300 mb-1 flex items-center space-x-1.5">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Pilih Lembar Kerja (Sheet)</span>
+            </label>
+            <select id="opt-xlsx-sheet"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+
+          <!-- Delimiter Output -->
+          <div>
+            <label for="opt-xlsx-delimiter" class="block font-medium text-slate-300 mb-1 flex items-center space-x-1.5">
+              <i data-lucide="split" class="w-3.5 h-3.5 text-teal-400"></i>
+              <span>Pemisah Output CSV</span>
+            </label>
+            <select id="opt-xlsx-delimiter"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors">
+              <option value="," selected>Koma (,) &bull; Rekomendasi Standar</option>
+              <option value=";">Titik Koma (;)</option>
+              <option value="&#9;">Tab (\t)</option>
+              <option value="|">Pipa (|)</option>
+            </select>
+          </div>
+
+          <!-- Encoding Output -->
+          <div>
+            <label for="opt-xlsx-encoding" class="block font-medium text-slate-300 mb-1 flex items-center space-x-1.5">
+              <i data-lucide="binary" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Format Encoding Output</span>
+            </label>
+            <select id="opt-xlsx-encoding"
+              class="w-full px-3 py-2 bg-slate-900/90 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors">
+              <option value="utf-8-sig" selected>UTF-8 dengan BOM &bull; Rekomendasi Excel</option>
+              <option value="utf-8">UTF-8 Standar (Web/Database)</option>
+              <option value="latin-1">Latin-1 (ISO-8859-1)</option>
+              <option value="windows-1252">Windows-1252 (ANSI)</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Table Preview -->
         <div class="space-y-2">
           <div class="flex items-center justify-between text-xs text-slate-400">
@@ -325,7 +401,7 @@
 
           <button id="btn-convert" type="button"
             class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white text-xs font-bold flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all">
-            <i data-lucide="download" class="w-4 h-4"></i>
+            <i id="btn-convert-icon" data-lucide="download" class="w-4 h-4"></i>
             <span id="btn-convert-text">Konversi & Unduh XLSX</span>
           </button>
         </div>
@@ -339,13 +415,12 @@
       <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
         <div
           class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
-          <i data-lucide="sparkles" class="w-5 h-5"></i>
+          <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
         </div>
         <div>
-          <h4 class="font-semibold text-sm text-white">Deteksi Otomatis Cerdas</h4>
+          <h4 class="font-semibold text-sm text-white">Konversi Dua Arah Fleksibel</h4>
           <p class="text-xs text-slate-400 mt-1">
-            Menganalisis karakter pemisah (koma, titik koma, tab) dan encoding (UTF-8, Latin-1, dsb) tanpa konfigurasi
-            manual.
+            Ubah CSV ke Excel berformat rapi, atau ekspor Excel (.xlsx) ke CSV terdelimitasi dengan dukungan multi-sheet yang leluasa.
           </p>
         </div>
       </div>
@@ -353,13 +428,12 @@
       <div class="glass-card rounded-xl p-5 flex items-start space-x-4">
         <div
           class="w-10 h-10 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0 border border-teal-500/20">
-          <i data-lucide="layout-grid" class="w-5 h-5"></i>
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
         </div>
         <div>
-          <h4 class="font-semibold text-sm text-white">Excel Rapi & Siap Baca</h4>
+          <h4 class="font-semibold text-sm text-white">Integritas Data Terjaga</h4>
           <p class="text-xs text-slate-400 mt-1">
-            Header dengan gaya kontras, fitur filter aktif, auto-fit lebar kolom, serta konversi angka tanpa merusak
-            angka awalan nol.
+            Dukungan format UTF-8 BOM dan Smart Typing menjaga nomor telepon, kode identitas, desimal, dan karakter khusus tidak rusak.
           </p>
         </div>
       </div>
@@ -370,9 +444,9 @@
           <i data-lucide="lock" class="w-5 h-5"></i>
         </div>
         <div>
-          <h4 class="font-semibold text-sm text-white">Privasi Terjamin</h4>
+          <h4 class="font-semibold text-sm text-white">100% Privasi Server Mandiri</h4>
           <p class="text-xs text-slate-400 mt-1">
-            Berjalan sepenuhnya di server mandiri (*self-hosted*).
+            Pemrosesan berjalan sepenuhnya di server mandiri (*self-hosted*). Berkas sementara langsung dibersihkan setelah selesai diunduh.
           </p>
         </div>
       </div>
@@ -385,47 +459,125 @@
 
   <!-- Footer -->
   <footer class="w-full border-t border-white/10 py-6 mt-12 bg-slate-950/40 text-center text-xs text-slate-500">
-    <p>csv2xlsx &bull; Self-Hosted Fast Delimited to Excel Spreadsheet Converter &bull; FastAPI Monolith</p>
+    <p>csv2xlsx &bull; Self-Hosted Fast CSV &bull; Excel Bidirectional Converter &bull; FastAPI Monolith</p>
   </footer>
 
   <!-- Application Logic -->
   <script>
     // State management
+    let activeMode = 'csv2xlsx'; // 'csv2xlsx' or 'xlsx2csv'
     let currentFile = null;
     let previewData = null;
 
-    // Elements
+    // Elements: Mode Tabs
+    const tabCsv2Xlsx = document.getElementById('tab-csv2xlsx');
+    const tabXlsx2Csv = document.getElementById('tab-xlsx2csv');
+    const heroTitle = document.getElementById('hero-title');
+    const heroDesc = document.getElementById('hero-desc');
+
+    // Elements: Dropzone & Loading
     const dropzoneSection = document.getElementById('dropzone-section');
-    const loadingSection = document.getElementById('loading-section');
-    const previewSection = document.getElementById('preview-section');
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-input');
+    const dropzoneHint = document.getElementById('dropzone-hint');
+    const loadingSection = document.getElementById('loading-section');
     const loadingTitle = document.getElementById('loading-title');
     const loadingDesc = document.getElementById('loading-desc');
 
+    // Elements: Preview
+    const previewSection = document.getElementById('preview-section');
     const fileNameDisplay = document.getElementById('file-name-display');
     const fileSizeDisplay = document.getElementById('file-size-display');
     const statRows = document.getElementById('stat-rows');
     const statCols = document.getElementById('stat-cols');
+    const statBoxDelimiter = document.getElementById('stat-box-delimiter');
     const statDelimiter = document.getElementById('stat-delimiter');
+    const statBoxEncoding = document.getElementById('stat-box-encoding');
     const statEncoding = document.getElementById('stat-encoding');
+    const statBoxSheet = document.getElementById('stat-box-sheet');
+    const statActiveSheet = document.getElementById('stat-active-sheet');
+    const statBoxTotalSheets = document.getElementById('stat-box-total-sheets');
+    const statTotalSheets = document.getElementById('stat-total-sheets');
 
+    // Elements: Configurations
+    const configCsv2Xlsx = document.getElementById('config-csv2xlsx');
     const optSheetName = document.getElementById('opt-sheet-name');
     const optDelimiter = document.getElementById('opt-delimiter');
     const optAutofilter = document.getElementById('opt-autofilter');
     const optAutowidth = document.getElementById('opt-autowidth');
 
+    const configXlsx2Csv = document.getElementById('config-xlsx2csv');
+    const optXlsxSheet = document.getElementById('opt-xlsx-sheet');
+    const optXlsxDelimiter = document.getElementById('opt-xlsx-delimiter');
+    const optXlsxEncoding = document.getElementById('opt-xlsx-encoding');
+
+    // Elements: Table & Actions
     const previewThead = document.getElementById('preview-thead');
     const previewTbody = document.getElementById('preview-tbody');
     const previewRowCountBadge = document.getElementById('preview-row-count-badge');
-
     const btnConvert = document.getElementById('btn-convert');
     const btnConvertText = document.getElementById('btn-convert-text');
     const btnReset = document.getElementById('btn-reset');
     const toastContainer = document.getElementById('toast-container');
 
-    // Initialize icons
+    // Initialize lucide icons
     lucide.createIcons();
+
+    // Mode Switch Handlers
+    tabCsv2Xlsx.addEventListener('click', () => setMode('csv2xlsx'));
+    tabXlsx2Csv.addEventListener('click', () => setMode('xlsx2csv'));
+
+    function setMode(mode, preserveFile = false) {
+      if (activeMode === mode && !preserveFile) return;
+      activeMode = mode;
+
+      if (!preserveFile) {
+        resetToUpload();
+      }
+
+      if (mode === 'csv2xlsx') {
+        // Active tab styling
+        tabCsv2Xlsx.className = 'flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25';
+        tabXlsx2Csv.className = 'flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 hover:bg-slate-800/60';
+
+        heroTitle.textContent = 'Ubah Data CSV Menjadi Excel';
+        heroDesc.textContent = 'Deteksi otomatis format delimiter & encoding, styling header profesional, auto-filter, dan penyesuaian lebar kolom instan.';
+
+        fileInput.accept = '.csv,.tsv,.txt';
+        dropzoneHint.innerHTML = 'Mendukung format file terdelimitasi <span class="text-slate-300 font-mono">.csv</span>, <span class="text-slate-300 font-mono">.tsv</span>, <span class="text-slate-300 font-mono">.txt</span> (Maksimal 50 MB)';
+
+        configCsv2Xlsx.classList.remove('hidden');
+        configXlsx2Csv.classList.add('hidden');
+
+        statBoxDelimiter.classList.remove('hidden');
+        statBoxEncoding.classList.remove('hidden');
+        statBoxSheet.classList.add('hidden');
+        statBoxTotalSheets.classList.add('hidden');
+
+        btnConvertText.textContent = 'Konversi & Unduh XLSX';
+      } else {
+        // XLSX to CSV mode
+        tabXlsx2Csv.className = 'flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md shadow-teal-500/25';
+        tabCsv2Xlsx.className = 'flex items-center space-x-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-all duration-200 hover:bg-slate-800/60';
+
+        heroTitle.textContent = 'Ubah Spreadsheet Excel Menjadi CSV';
+        heroDesc.textContent = 'Ekspor lembar kerja Excel (.xlsx) ke format CSV/TSV terdelimitasi dengan dukungan multi-sheet, format UTF-8 BOM, dan pratinjau instan.';
+
+        fileInput.accept = '.xlsx';
+        dropzoneHint.innerHTML = 'Mendukung format spreadsheet Microsoft Excel <span class="text-slate-300 font-mono">.xlsx</span> (Maksimal 50 MB)';
+
+        configCsv2Xlsx.classList.add('hidden');
+        configXlsx2Csv.classList.remove('hidden');
+
+        statBoxDelimiter.classList.add('hidden');
+        statBoxEncoding.classList.add('hidden');
+        statBoxSheet.classList.remove('hidden');
+        statBoxTotalSheets.classList.remove('hidden');
+
+        btnConvertText.textContent = 'Konversi & Unduh CSV';
+      }
+      lucide.createIcons();
+    }
 
     // Healthcheck ping
     async function checkHealth() {
@@ -477,15 +629,6 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
-    // Format delimiter label
-    function getDelimiterLabel(d) {
-      if (d === ',') return 'Koma ( , )';
-      if (d === ';') return 'Titik Koma ( ; )';
-      if (d === '\t') return 'Tab ( \\t )';
-      if (d === '|') return 'Pipa ( | )';
-      return `Kustom ( ${d} )`;
-    }
-
     // Drag & drop handlers
     dropzone.addEventListener('click', () => fileInput.click());
 
@@ -509,26 +652,47 @@
       const dt = e.dataTransfer;
       const files = dt.files;
       if (files.length > 0) {
-        handleFileSelection(files[0]);
+        processUploadedFile(files[0]);
       }
     });
 
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
-        handleFileSelection(e.target.files[0]);
+        processUploadedFile(e.target.files[0]);
       }
     });
 
-    // File selection & preview fetch
-    async function handleFileSelection(file) {
-      // Validate size (50MB)
+    // Detect format and process
+    function processUploadedFile(file) {
       if (file.size > 50 * 1024 * 1024) {
         showToast('Ukuran file melebihi batas maksimum 50 MB.', 'error');
         return;
       }
 
+      const lowerName = file.name.toLowerCase();
+      const isXlsx = lowerName.endsWith('.xlsx');
+      const isCsv = lowerName.endsWith('.csv') || lowerName.endsWith('.tsv') || lowerName.endsWith('.txt');
+
+      // Auto-switch mode if user drops an opposite file
+      if (isXlsx && activeMode !== 'xlsx2csv') {
+        showToast('Mendeteksi file Excel (.xlsx), otomatis beralih ke mode Excel ke CSV.', 'success');
+        setMode('xlsx2csv', true);
+      } else if (isCsv && activeMode !== 'csv2xlsx') {
+        showToast('Mendeteksi file teks terdelimitasi, otomatis beralih ke mode CSV ke Excel.', 'success');
+        setMode('csv2xlsx', true);
+      }
+
+      if (activeMode === 'xlsx2csv') {
+        fetchXlsxPreview(file);
+      } else {
+        fetchCsvPreview(file);
+      }
+    }
+
+    // Fetch CSV Preview
+    async function fetchCsvPreview(file) {
       currentFile = file;
-      showLoading('Menganalisis file...', 'Membaca struktur dan menyiapkan pratinjau');
+      showLoading('Menganalisis file CSV...', 'Membaca struktur kolom, deteksi pemisah, dan menyiapkan pratinjau data.');
 
       const formData = new FormData();
       formData.append('file', file);
@@ -550,20 +714,49 @@
         }
 
         previewData = await response.json();
-        renderPreview(file, previewData);
+        renderCsvPreview(file, previewData);
       } catch (err) {
         showToast(err.message, 'error');
         resetToUpload();
       }
     }
 
-    // Render Preview
-    function renderPreview(file, data) {
+    // Fetch XLSX Preview
+    async function fetchXlsxPreview(file, targetSheet = null) {
+      currentFile = file;
+      showLoading('Menganalisis file Excel...', 'Membaca daftar sheet dan menyiapkan pratinjau data.');
+
+      const formData = new FormData();
+      formData.append('file', file);
+      if (targetSheet) {
+        formData.append('sheet_name', targetSheet);
+      }
+
+      try {
+        const response = await fetch('/api/xlsx/preview', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({ detail: 'Gagal memproses file Excel.' }));
+          throw new Error(errData.detail || 'Terjadi kesalahan saat memproses XLSX.');
+        }
+
+        previewData = await response.json();
+        renderXlsxPreview(file, previewData);
+      } catch (err) {
+        showToast(err.message, 'error');
+        resetToUpload();
+      }
+    }
+
+    // Render CSV Preview
+    function renderCsvPreview(file, data) {
       hideLoading();
       dropzoneSection.classList.add('hidden');
       previewSection.classList.remove('hidden');
 
-      // Update header info
       fileNameDisplay.textContent = file.name;
       fileSizeDisplay.textContent = formatBytes(file.size);
       statRows.textContent = data.total_rows.toLocaleString('id-ID');
@@ -571,11 +764,42 @@
       statDelimiter.textContent = data.detected_delimiter === '\t' ? '\\t' : data.detected_delimiter;
       statEncoding.textContent = data.detected_encoding;
 
-      // Suggest sheet name based on file stem
       const stem = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
       optSheetName.value = stem.substring(0, 31);
 
-      // Render table headers
+      renderTable(data.headers, data.preview_rows, data.total_rows);
+    }
+
+    // Render XLSX Preview
+    function renderXlsxPreview(file, data) {
+      hideLoading();
+      dropzoneSection.classList.add('hidden');
+      previewSection.classList.remove('hidden');
+
+      fileNameDisplay.textContent = file.name;
+      fileSizeDisplay.textContent = formatBytes(file.size);
+      statRows.textContent = data.total_rows.toLocaleString('id-ID');
+      statCols.textContent = data.total_columns.toLocaleString('id-ID');
+      statActiveSheet.textContent = data.active_sheet;
+      statTotalSheets.textContent = data.sheets.length;
+
+      // Populate sheet options
+      optXlsxSheet.innerHTML = '';
+      data.sheets.forEach(sName => {
+        const opt = document.createElement('option');
+        opt.value = sName;
+        opt.textContent = sName === data.active_sheet ? `${sName} (Aktif)` : sName;
+        if (sName === data.active_sheet) {
+          opt.selected = true;
+        }
+        optXlsxSheet.appendChild(opt);
+      });
+
+      renderTable(data.headers, data.preview_rows, data.total_rows);
+    }
+
+    // Universal Table Renderer
+    function renderTable(headers, rows, totalRows) {
       previewThead.innerHTML = '';
       const trHead = document.createElement('tr');
 
@@ -585,17 +809,16 @@
       thIndex.textContent = '#';
       trHead.appendChild(thIndex);
 
-      data.headers.forEach(h => {
+      headers.forEach((h, idx) => {
         const th = document.createElement('th');
         th.className = 'py-2.5 px-4 text-[11px] font-semibold text-white tracking-wider whitespace-nowrap border-r border-slate-800 last:border-r-0';
-        th.textContent = h || '(Kolom Tanpa Nama)';
+        th.textContent = h || `(Kolom ${idx + 1})`;
         trHead.appendChild(th);
       });
       previewThead.appendChild(trHead);
 
-      // Render preview rows
       previewTbody.innerHTML = '';
-      data.preview_rows.forEach((row, rIdx) => {
+      rows.forEach((row, rIdx) => {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition-colors';
 
@@ -605,8 +828,7 @@
         tdIndex.textContent = rIdx + 1;
         tr.appendChild(tdIndex);
 
-        // Ensure row has cells matching header count
-        const colCount = Math.max(data.headers.length, row.length);
+        const colCount = Math.max(headers.length, row.length);
         for (let c = 0; c < colCount; c++) {
           const td = document.createElement('td');
           td.className = 'py-2 px-4 whitespace-nowrap border-r border-slate-800/50 last:border-r-0 text-slate-300';
@@ -616,22 +838,39 @@
         previewTbody.appendChild(tr);
       });
 
-      previewRowCountBadge.textContent = `${data.preview_rows.length} dari ${data.total_rows} baris ditampilkan`;
+      previewRowCountBadge.textContent = `${rows.length} dari ${totalRows} baris ditampilkan`;
       lucide.createIcons();
     }
 
-    // Delimiter change event (re-fetch preview if user changes delimiter)
+    // Delimiter change event for CSV preview
     optDelimiter.addEventListener('change', () => {
-      if (currentFile) {
-        handleFileSelection(currentFile);
+      if (currentFile && activeMode === 'csv2xlsx') {
+        fetchCsvPreview(currentFile);
       }
     });
 
-    // Convert & Download handler
+    // Sheet change event for XLSX preview
+    optXlsxSheet.addEventListener('change', () => {
+      if (currentFile && activeMode === 'xlsx2csv') {
+        const selectedSheet = optXlsxSheet.value;
+        fetchXlsxPreview(currentFile, selectedSheet);
+      }
+    });
+
+    // Convert & Download Handler
     btnConvert.addEventListener('click', async () => {
       if (!currentFile) return;
 
-      setConvertLoading(true);
+      if (activeMode === 'csv2xlsx') {
+        await executeCsvToXlsxConversion();
+      } else {
+        await executeXlsxToCsvConversion();
+      }
+    });
+
+    // Execute CSV to XLSX
+    async function executeCsvToXlsxConversion() {
+      setConvertLoading(true, 'Memproses XLSX...');
 
       const formData = new FormData();
       formData.append('file', currentFile);
@@ -660,39 +899,82 @@
           throw new Error(errData.detail || 'Terjadi kesalahan saat konversi XLSX.');
         }
 
-        // Trigger browser download
-        const blob = await response.blob();
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = downloadUrl;
-
-        // Parse filename from header or fallback
-        const disposition = response.headers.get('Content-Disposition');
-        let downloadName = 'converted_data.xlsx';
-        if (disposition && disposition.includes('filename=')) {
-          const match = disposition.match(/filename="?([^"]+)"?/);
-          if (match && match[1]) {
-            downloadName = match[1];
-          }
-        } else {
-          const stem = currentFile.name.substring(0, currentFile.name.lastIndexOf('.')) || 'data';
-          downloadName = `${stem}.xlsx`;
-        }
-
-        a.download = downloadName;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(downloadUrl);
-        a.remove();
-
-        showToast('File Excel berhasil diunduh!', 'success');
+        await downloadFileResponse(response, `${PathStem(currentFile.name)}.xlsx`);
+        showToast('File Excel (.xlsx) berhasil diunduh!', 'success');
       } catch (err) {
         showToast(err.message, 'error');
       } finally {
         setConvertLoading(false);
       }
-    });
+    }
+
+    // Execute XLSX to CSV
+    async function executeXlsxToCsvConversion() {
+      setConvertLoading(true, 'Memproses CSV...');
+
+      const formData = new FormData();
+      formData.append('file', currentFile);
+
+      const selectedSheet = optXlsxSheet.value;
+      if (selectedSheet) {
+        formData.append('sheet_name', selectedSheet);
+      }
+
+      const delimiter = optXlsxDelimiter.value || ',';
+      formData.append('delimiter', delimiter);
+
+      const encoding = optXlsxEncoding.value || 'utf-8-sig';
+      formData.append('encoding', encoding);
+
+      try {
+        const response = await fetch('/api/xlsx/convert', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({ detail: 'Gagal mengonversi file Excel.' }));
+          throw new Error(errData.detail || 'Terjadi kesalahan saat konversi CSV.');
+        }
+
+        const stem = PathStem(currentFile.name);
+        const defaultFilename = selectedSheet ? `${stem}_${selectedSheet}.csv` : `${stem}.csv`;
+        await downloadFileResponse(response, defaultFilename);
+        showToast('File CSV berhasil diunduh!', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        setConvertLoading(false);
+      }
+    }
+
+    // Helper: Stream and trigger download in browser
+    async function downloadFileResponse(response, defaultFilename) {
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = downloadUrl;
+
+      const disposition = response.headers.get('Content-Disposition');
+      let downloadName = defaultFilename;
+      if (disposition && disposition.includes('filename=')) {
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        if (match && match[1]) {
+          downloadName = match[1];
+        }
+      }
+
+      a.download = downloadName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      a.remove();
+    }
+
+    function PathStem(name) {
+      return name.substring(0, name.lastIndexOf('.')) || name;
+    }
 
     // Reset button
     btnReset.addEventListener('click', resetToUpload);
@@ -721,15 +1003,15 @@
       loadingSection.classList.add('hidden');
     }
 
-    function setConvertLoading(isLoading) {
+    function setConvertLoading(isLoading, text = '') {
       if (isLoading) {
         btnConvert.disabled = true;
         btnConvert.classList.add('opacity-75', 'cursor-not-allowed');
-        btnConvertText.textContent = 'Memproses XLSX...';
+        btnConvertText.textContent = text || 'Memproses...';
       } else {
         btnConvert.disabled = false;
         btnConvert.classList.remove('opacity-75', 'cursor-not-allowed');
-        btnConvertText.textContent = 'Konversi & Unduh XLSX';
+        btnConvertText.textContent = activeMode === 'csv2xlsx' ? 'Konversi & Unduh XLSX' : 'Konversi & Unduh CSV';
       }
     }
   </script>

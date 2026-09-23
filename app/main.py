@@ -17,7 +17,9 @@ from app.converter import (
     MAX_FILE_SIZE_BYTES,
     ConversionError,
     convert_csv_to_xlsx,
+    convert_xlsx_to_csv,
     read_csv_preview,
+    read_xlsx_preview,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -136,6 +138,90 @@ async def convert_csv(
     except Exception as e:
         remove_temp_file(temp_path)
         raise HTTPException(status_code=500, detail=f"Terjadi kesalahan saat konversi: {str(e)}")
+
+
+@app.post("/api/xlsx/preview")
+async def preview_xlsx(
+    file: UploadFile = File(...),
+    sheet_name: Optional[str] = Form(None),
+):
+    """Generate preview and metadata for uploaded Excel (.xlsx) file."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Nama file tidak valid.")
+
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Ukuran file melebihi batas maksimum 50 MB.",
+        )
+
+    try:
+        clean_sheet = sheet_name.strip() if sheet_name and sheet_name.strip() else None
+        preview_data = read_xlsx_preview(
+            file_bytes=contents,
+            sheet_name=clean_sheet,
+            max_preview_rows=20,
+            filename=file.filename,
+        )
+        return JSONResponse(content=preview_data)
+    except ConversionError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal memproses file Excel: {str(e)}")
+
+
+@app.post("/api/xlsx/convert")
+async def convert_xlsx(
+    file: UploadFile = File(...),
+    sheet_name: Optional[str] = Form(None),
+    delimiter: Optional[str] = Form(","),
+    encoding: Optional[str] = Form("utf-8-sig"),
+):
+    """Convert Excel (.xlsx) sheet to delimited CSV and stream to client."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Nama file tidak valid.")
+
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Ukuran file melebihi batas maksimum 50 MB.",
+        )
+
+    stem_name = Path(file.filename).stem or "export"
+    clean_sheet = sheet_name.strip() if sheet_name and sheet_name.strip() else None
+    clean_delim = delimiter if delimiter in (",", ";", "\t", "|") else ","
+    clean_enc = encoding if encoding in ("utf-8-sig", "utf-8", "latin-1", "windows-1252") else "utf-8-sig"
+
+    if clean_sheet:
+        csv_filename = f"{stem_name}_{clean_sheet}.csv"
+    else:
+        csv_filename = f"{stem_name}.csv"
+
+    temp_fd, temp_path = tempfile.mkstemp(suffix=".csv", prefix="xlsx2csv_")
+    try:
+        with os.fdopen(temp_fd, "wb") as f_out:
+            convert_xlsx_to_csv(
+                file_bytes=contents,
+                output_stream=f_out,
+                sheet_name=clean_sheet,
+                delimiter=clean_delim,
+                encoding=clean_enc,
+            )
+
+        return FileResponse(
+            path=temp_path,
+            filename=csv_filename,
+            media_type="text/csv; charset=utf-8",
+            background=BackgroundTask(remove_temp_file, temp_path),
+        )
+    except ConversionError as e:
+        remove_temp_file(temp_path)
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        remove_temp_file(temp_path)
+        raise HTTPException(status_code=500, detail=f"Terjadi kesalahan saat konversi CSV: {str(e)}")
 
 
 # Serve static files if directory exists
